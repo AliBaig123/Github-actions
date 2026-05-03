@@ -20,7 +20,6 @@ jobs:
          echo "SPRING_DATASOURCE_URL=${{ secrets.APP_CREDS_URL }}" >> $GITHUB_ENV
          echo "SPRING_DATASOURCE_USERNAME=${{ secrets.APP_CREDS_USERNAME }}" >> $GITHUB_ENV
          echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.APP_CREDS_PASSWD }}" >> $GITHUB_ENV
-  
       - name: Build with Maven
         run: mvn clean install
 
