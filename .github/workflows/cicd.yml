@@ -1,4 +1,4 @@
-name: Test AWS ECR
+name: Test AWS ECR login creds
 
 on:
   workflow_dispatch:
