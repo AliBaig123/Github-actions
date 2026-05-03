@@ -4,8 +4,7 @@ services:
   postgres:
     image: postgres:15
     container_name: database
-    env_file:
-      - .env
+
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -20,8 +19,7 @@ services:
       context: .
     image: app:1
     container_name: app-container
-    env_file:
-      - .env
+    
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
