@@ -28,7 +28,6 @@ jobs:
       echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}" >> .env
    - name: Deploy containers
      run: |
-      docker compose down || true
       docker compose up -d --build
   
     
