@@ -1,0 +1,28 @@
+name: Spring Boot CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build with Maven
+        run: mvn clean install
+
+      - name: Build Docker image
+        run: docker build -t app:1 .
+
+      - name: Stop old container
+        run: docker stop app || true
+
+      - name: Remove old container
+        run: docker rm app || true
+
+      - name: Run container
+        run: docker run -d --name app -p 8080:8080 app:1
