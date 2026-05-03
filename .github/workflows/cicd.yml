@@ -11,7 +11,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Set environment variables
+        run: |
+         echo "POSTGRES_USER=${{ secrets.USER }}" >> $GITHUB_ENV
+         echo "POSTGRES_PASSWORD=${{ secrets.PASSWD }}" >> $GITHUB_ENV
+         echo "POSTGRES_DB=${{ secrets.DATABASE }}" >> $GITHUB_ENV
 
+         echo "SPRING_DATASOURCE_URL=${{ secrets.APP_CREDS_URL }}" >> $GITHUB_ENV
+         echo "SPRING_DATASOURCE_USERNAME=${{ secrets.APP_CREDS_USERNAME }}" >> $GITHUB_ENV
+         echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.APP_CREDS_PASSWD }}" >> $GITHUB_ENV
+  
       - name: Build with Maven
         run: mvn clean install
 
