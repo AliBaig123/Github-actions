@@ -12,16 +12,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set environment variables
-        run: |
-          echo "POSTGRES_USER=${{ secrets.USER }}" >> $GITHUB_ENV
-          echo "POSTGRES_PASSWORD=${{ secrets.PASSWD }}" >> $GITHUB_ENV
-          echo "POSTGRES_DB=${{ secrets.DATABASE }}" >> $GITHUB_ENV
-
-          echo "SPRING_DATASOURCE_URL=${{ secrets.APP_CREDS_URL }}" >> $GITHUB_ENV
-          echo "SPRING_DATASOURCE_USERNAME=${{ secrets.APP_CREDS_USERNAME }}" >> $GITHUB_ENV
-          echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.APP_CREDS_PASSWD }}" >> $GITHUB_ENV
-
       - name: Build with Maven
         run: mvn clean install
 
@@ -29,10 +19,18 @@ jobs:
         run: docker build -t app:1 .
 
       - name: Stop old container
-        run: docker stop app || true
+        run: docker stop app-container || true
 
       - name: Remove old container
-        run: docker rm app || true
+        run: docker rm app-container || true
 
       - name: Run container
+        env:
+          POSTGRES_USER: ${{ secrets.USER }}
+          POSTGRES_PASSWORD: ${{ secrets.PASSWD }}
+          POSTGRES_DB: ${{ secrets.DATABASE }}
+          SPRING_DATASOURCE_URL: ${{ secrets.APP_CREDS_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.APP_CREDS_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.APP_CREDS_PASSWD }}
         run: docker compose up -d --build
+      
