@@ -25,4 +25,4 @@ jobs:
         run: docker rm app || true
 
       - name: Run container
-        run: docker-compose up -d --build
+        run: docker compose up -d --build
