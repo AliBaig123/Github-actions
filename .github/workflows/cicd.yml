@@ -83,8 +83,8 @@ jobs:
           docker pull \$APP_IMAGE
 
           # Deploy using compose
-          docker compose down || true
-          docker compose up -d
+          docker-compose down || true
+          docker-compose up -d
 
         
     
