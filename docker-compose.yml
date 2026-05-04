@@ -15,8 +15,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   app:
-  
-    image: app:1
+
+    image: ${APP_IMAGE}
     container_name: app-container
     
     environment:
