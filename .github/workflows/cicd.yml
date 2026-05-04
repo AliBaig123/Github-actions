@@ -67,6 +67,8 @@ jobs:
 
             docker pull $ECR_REPO:${{ env.IMAGE_TAG }} &&
 
+            docker rm -f springboot-app || true &&
+
             docker run -d \
               --name springboot-app \
               --restart always \
