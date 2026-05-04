@@ -3,11 +3,11 @@ server:
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://database:5432/alidb}
+    username: ${SPRING_DATASOURCE_USERNAME:alibaig123}
+    password: ${SPRING_DATASOURCE_PASSWORD:admin123}
     driver-class-name: org.postgresql.Driver
-
+    
   jpa:
     hibernate:
       ddl-auto: update
