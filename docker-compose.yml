@@ -14,7 +14,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   app:
-    build: .
+    build: .   
     container_name: springboot-app
     env_file:
       - .env
