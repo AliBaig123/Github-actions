@@ -8,6 +8,6 @@ public class HomeController {
 
     @GetMapping("/")
     public String home() {
-        return "App is running!";
+        return "App is running with githib actions";
     }
 }
