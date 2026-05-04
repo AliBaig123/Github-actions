@@ -1,4 +1,4 @@
-name: Springboot CI/CD 
+name: Springboot CI/CD
 
 on:
   push:
@@ -62,31 +62,25 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh ubuntu@${{ secrets.EC2_IP }} "
-              cd /home/ubuntu/Github-actions &&
+            set -e
+            cd /home/ubuntu/Github-actions
 
-          # Login to ECR
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
-          docker login --username AWS --password-stdin $ECR_REPO
+            # Login to ECR
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
+            docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
-          # Export DB variables
-          export POSTGRES_USER='${{ secrets.POSTGRES_USER }}'
-          export POSTGRES_PASSWORD='${{ secrets.POSTGRES_PASSWORD }}'
-          export POSTGRES_DB='${{ secrets.POSTGRES_DB }}'
+            # Set image tag
+            export IMAGE_TAG=${{ env.IMAGE_TAG }}
 
-          export SPRING_DATASOURCE_URL='${{ secrets.SPRING_DATASOURCE_URL }}'
-          export SPRING_DATASOURCE_USERNAME='${{ secrets.SPRING_DATASOURCE_USERNAME }}'
-          export SPRING_DATASOURCE_PASSWORD='${{ secrets.SPRING_DATASOURCE_PASSWORD }}'
+            # Pull image
+            docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/springboot-application:\$IMAGE_TAG
 
-          # Set image dynamically
-          export APP_IMAGE=$ECR_REPO:${{ env.IMAGE_TAG }}
+            # Cleanup old container
+            docker rm -f springboot-app || true
 
-          # Pull latest image
-          docker pull \$APP_IMAGE
-
-          # Deploy using compose
-          docker-compose down || true
-          docker-compose up -d
-      
+            # Restart using compose
+            docker compose down || true
+            docker compose up -d
           "
     
           
