@@ -16,15 +16,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Build app
+      # 2. FREE DISK SPACE (FIX YOUR ERROR)
+      - name: Clean Docker space
+        run: |
+          docker system prune -af
+          docker builder prune -af
+
+      # 3. Build Maven
       - name: Build Maven
         run: mvn clean package -DskipTests
 
-      # 3. Create tag
+      # 4. Generate Image Tag
       - name: Set image tag
         run: echo "IMAGE_TAG=${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      # 4. AWS creds
+      # 5. AWS Credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -32,33 +38,35 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # 5. Login ECR
+      # 6. Login to ECR (FIXED)
       - name: Login to ECR
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
           docker login --username AWS --password-stdin $ECR_REPO
 
-      # 6. Build image
+      # 7. Build Docker image
       - name: Build Docker image
-        run: docker build -t $ECR_REPO:${{ env.IMAGE_TAG }} .
+        run: |
+          docker build -t $ECR_REPO:${{ env.IMAGE_TAG }} .
 
-      # 7. Push image
+      # 8. Push Docker image
       - name: Push Docker image
-        run: docker push $ECR_REPO:${{ env.IMAGE_TAG }}
+        run: |
+          docker push $ECR_REPO:${{ env.IMAGE_TAG }}
 
-      # 8. Setup SSH key
+      # 9. Setup SSH key
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      # 9. Add EC2 host key
+      # 10. Add EC2 host
       - name: Add EC2 to known_hosts
         run: |
           ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
 
-      # 10. Deploy
+      # 11. Deploy
       - name: Deploy to EC2
         run: |
           ssh ubuntu@${{ secrets.EC2_IP }} "
@@ -72,27 +80,15 @@ jobs:
             # Set image tag
             export IMAGE_TAG=${{ env.IMAGE_TAG }}
 
-            # Pull image
+            # Pull latest image
             docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/springboot-application:\$IMAGE_TAG
 
-            # Cleanup old container
+            # Stop old container
             docker rm -f springboot-app || true
 
-            # Restart using compose
-            docker compose down || true
-            docker compose up -d
+            # Start new container
+            docker run -d \
+              --name springboot-app \
+              -p 8080:8080 \
+              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/springboot-application:\$IMAGE_TAG
           "
-    
-          
-            
-        
-
-   
-
-     
-
-      
-        
-
-    
-
