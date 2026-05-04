@@ -40,7 +40,7 @@ jobs:
 
    - name: push docker image
      run: |
-       docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/application:${{ env.IMAGE_TAG }}
+       docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/springboot-application:${{ env.IMAGE_TAG }}
 
    
 
