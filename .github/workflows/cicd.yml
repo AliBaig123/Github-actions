@@ -1,4 +1,4 @@
-name: Springboot CI/CD application 
+name: Springboot CI/CD 
 
 on:
   push:
