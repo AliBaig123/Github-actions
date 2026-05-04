@@ -12,25 +12,25 @@ jobs:
       ECR_REPO: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/springboot-application
 
     steps:
-      # 1. Checkout
+      # 1. Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. FREE DISK SPACE (FIX YOUR ERROR)
+      # 2. Clean Docker space (optional but useful)
       - name: Clean Docker space
         run: |
           docker system prune -af
           docker builder prune -af
 
-      # 3. Build Maven
+      # 3. Build Maven project
       - name: Build Maven
         run: mvn clean package -DskipTests
 
-      # 4. Generate Image Tag
+      # 4. Generate IMAGE TAG
       - name: Set image tag
         run: echo "IMAGE_TAG=${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      # 5. AWS Credentials
+      # 5. Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -38,7 +38,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # 6. Login to ECR (FIXED)
+      # 6. Login to ECR
       - name: Login to ECR
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
@@ -54,20 +54,20 @@ jobs:
         run: |
           docker push $ECR_REPO:${{ env.IMAGE_TAG }}
 
-      # 9. Setup SSH key
+      # 9. Setup SSH
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      # 10. Add EC2 host
+      # 10. Add EC2 to known hosts
       - name: Add EC2 to known_hosts
         run: |
           ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
 
-      # 11. Deploy
-      - name: Deploy to EC2
+      # 11. DEPLOY USING DOCKER COMPOSE (FIXED PART)
+      - name: Deploy to EC2 using docker-compose
         run: |
           ssh ubuntu@${{ secrets.EC2_IP }} "
             set -e
@@ -77,18 +77,13 @@ jobs:
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
             docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
-            # Set image tag
+            # Export dynamic image tag
             export IMAGE_TAG=${{ env.IMAGE_TAG }}
 
-            # Pull latest image
-            docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/springboot-application:\$IMAGE_TAG
+            # Stop old containers
+            docker-compose down -v
 
-            # Stop old container
-            docker rm -f springboot-app || true
-
-            # Start new container
-            docker run -d \
-              --name springboot-app \
-              -p 8080:8080 \
-              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/springboot-application:\$IMAGE_TAG
+            # Start fresh containers with new image
+            APP_IMAGE=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/springboot-application \
+            IMAGE_TAG=\$IMAGE_TAG docker-compose up -d --build
           "
