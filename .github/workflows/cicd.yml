@@ -61,7 +61,7 @@ jobs:
       # 10. Deploy
       - name: Deploy to EC2
         run: |
-          ssh ubuntu@${{ secrets.EC2_IP }} 
+          ssh ubuntu@${{ secrets.EC2_IP }} "
               cd $GITHUB_WORKSPACE
 
           # Login to ECR
@@ -86,8 +86,8 @@ jobs:
           # Deploy using compose
           docker-compose down || true
           docker-compose up -d
-
-        
+      
+          "
     
           
             
