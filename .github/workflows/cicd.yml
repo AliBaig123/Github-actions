@@ -46,39 +46,48 @@ jobs:
       - name: Push Docker image
         run: docker push $ECR_REPO:${{ env.IMAGE_TAG }}
 
-      #  8. Setup SSH private key
+      # 8. Setup SSH key
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      # 9. Add EC2 host key (Option 2)
+      # 9. Add EC2 host key
       - name: Add EC2 to known_hosts
         run: |
           ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
 
-      #10. Deploy
+      # 10. Deploy
       - name: Deploy to EC2
         run: |
-          ssh ubuntu@${{ secrets.EC2_IP }} "
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
-            docker login --username AWS --password-stdin $ECR_REPO &&
+          ssh ubuntu@${{ secrets.EC2_IP }} << EOF
 
-            docker pull $ECR_REPO:${{ env.IMAGE_TAG }} &&
+          # Login to ECR
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
+          docker login --username AWS --password-stdin $ECR_REPO
 
-            docker rm -f springboot-app || true &&
+          # Export DB variables
+          export POSTGRES_USER='${{ secrets.POSTGRES_USER }}'
+          export POSTGRES_PASSWORD='${{ secrets.POSTGRES_PASSWORD }}'
+          export POSTGRES_DB='${{ secrets.POSTGRES_DB }}'
 
-           
-           docker run -d \
-            --name springboot-app \
-            --restart always \
-            -p 8080:8080 \
-            -e SPRING_DATASOURCE_URL='${{ secrets.SPRING_DATASOURCE_URL }}' \
-            -e SPRING_DATASOURCE_USERNAME='${{ secrets.SPRING_DATASOURCE_USERNAME }}' \
-            -e SPRING_DATASOURCE_PASSWORD='${{ secrets.SPRING_DATASOURCE_PASSWORD }}' \
-            $ECR_REPO:${IMAGE_TAG}
-          "
+          export SPRING_DATASOURCE_URL='${{ secrets.SPRING_DATASOURCE_URL }}'
+          export SPRING_DATASOURCE_USERNAME='${{ secrets.SPRING_DATASOURCE_USERNAME }}'
+          export SPRING_DATASOURCE_PASSWORD='${{ secrets.SPRING_DATASOURCE_PASSWORD }}'
+
+          # Set image dynamically
+          export APP_IMAGE=$ECR_REPO:${{ env.IMAGE_TAG }}
+
+          # Pull latest image
+          docker pull \$APP_IMAGE
+
+          # Deploy using compose
+          docker compose down || true
+          docker compose up -d
+
+        
+    
           
             
         
