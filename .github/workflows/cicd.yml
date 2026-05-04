@@ -1,4 +1,4 @@
-name: Springboot CI pipeline (Docker → ECR)
+name: Springboot CI/CD (Docker → ECR → EC2)
 
 on:
   push:
@@ -12,15 +12,19 @@ jobs:
       ECR_REPO: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/springboot-application
 
     steps:
+      # 1. Checkout
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2. Build app
       - name: Build Maven
         run: mvn clean package -DskipTests
 
+      # 3. Create tag
       - name: Set image tag
         run: echo "IMAGE_TAG=${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}" >> $GITHUB_ENV
 
+      # 4. AWS creds
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -28,35 +32,50 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # 5. Login ECR
       - name: Login to ECR
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
           docker login --username AWS --password-stdin $ECR_REPO
 
-      - name: Build and tag Docker image
-        run: |
-          docker build -t $ECR_REPO:${{ env.IMAGE_TAG }} .
+      # 6. Build image
+      - name: Build Docker image
+        run: docker build -t $ECR_REPO:${{ env.IMAGE_TAG }} .
 
+      # 7. Push image
       - name: Push Docker image
+        run: docker push $ECR_REPO:${{ env.IMAGE_TAG }}
+
+      #  8. Setup SSH private key
+      - name: Setup SSH key
         run: |
-          docker push $ECR_REPO:${{ env.IMAGE_TAG }}
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
-      - name: Deploy to ec2 separate server
+      # 9. Add EC2 host key (Option 2)
+      - name: Add EC2 to known_hosts
         run: |
-         ssh ubuntu@${{ secrets.EC2_IP }} "
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
-          docker login --username AWS --password-stdin $ECR_REPO &&
+          ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
 
-          docker pull $ECR_REPO:${{ env.IMAGE_TAG }} &&
+      #10. Deploy
+      - name: Deploy to EC2
+        run: |
+          ssh ubuntu@${{ secrets.EC2_IP }} "
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
+            docker login --username AWS --password-stdin $ECR_REPO &&
 
-          docker stop springboot-app || true &&
-          docker rm springboot-app || true &&
+            docker pull $ECR_REPO:${{ env.IMAGE_TAG }} &&
 
-          docker run -d \
+            docker stop springboot-app || true &&
+            docker rm springboot-app || true &&
+
+            docker run -d \
               --name springboot-app \
               --restart always \
               -p 8080:8080 \
               $ECR_REPO:${{ env.IMAGE_TAG }}
+          "
             "
         
 
