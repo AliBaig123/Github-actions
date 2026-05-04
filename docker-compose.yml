@@ -19,7 +19,7 @@ services:
   app:
 
     image: ${APP_IMAGE}:${IMAGE_TAG}
-    container_name: app-container
+    container_name: springboot-app
     env_file:
      - .env
     
