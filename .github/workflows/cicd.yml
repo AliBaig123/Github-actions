@@ -67,16 +67,13 @@ jobs:
 
             docker pull $ECR_REPO:${{ env.IMAGE_TAG }} &&
 
-            docker stop springboot-app || true &&
-            docker rm springboot-app || true &&
-
             docker run -d \
               --name springboot-app \
               --restart always \
               -p 8080:8080 \
               $ECR_REPO:${{ env.IMAGE_TAG }}
           "
-            "
+            
         
 
    
