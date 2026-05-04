@@ -41,8 +41,24 @@ jobs:
         run: |
           docker push $ECR_REPO:${{ env.IMAGE_TAG }}
 
-      - name: Cleanup Docker (avoid disk bloat on self-hosted)
-        run: docker image prune -f
+      - name: Deploy to ec2 separate server
+        run: |
+         ssh ubuntu@${{ secrets.EC2_IP }} "
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
+          docker login --username AWS --password-stdin $ECR_REPO &&
+
+          docker pull $ECR_REPO:${{ env.IMAGE_TAG }} &&
+
+          docker stop springboot-app || true &&
+          docker rm springboot-app || true &&
+
+          docker run -d \
+              --name springboot-app \
+              --restart always \
+              -p 8080:8080 \
+              $ECR_REPO:${{ env.IMAGE_TAG }}
+            "
+        
 
    
 
