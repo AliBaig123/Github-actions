@@ -61,7 +61,8 @@ jobs:
       # 10. Deploy
       - name: Deploy to EC2
         run: |
-          ssh ubuntu@${{ secrets.EC2_IP }} << EOF
+          ssh ubuntu@${{ secrets.EC2_IP }} 
+            cd ~/Github-actions
 
           # Login to ECR
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
