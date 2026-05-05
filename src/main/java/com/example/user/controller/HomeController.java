@@ -8,6 +8,6 @@ public class HomeController {
 
     @GetMapping("/")
     public String home() {
-        return "App is running with github actions(pushed 3)";
+        return "App is running with github actions(pushed 4)";
     }
 }
