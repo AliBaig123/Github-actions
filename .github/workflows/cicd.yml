@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Clean Docker space (optional but useful)
+      # 2. Clean Docker space
       - name: Clean Docker space
         run: |
           docker system prune -af
@@ -66,7 +66,7 @@ jobs:
         run: |
           ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
 
-      # 11. DEPLOY USING DOCKER COMPOSE (FIXED PART)
+      # 11. DEPLOY USING DOCKER COMPOSE 
       - name: Deploy to EC2 using docker-compose
         run: |
           ssh ubuntu@${{ secrets.EC2_IP }} "
